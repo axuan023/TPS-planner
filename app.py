@@ -1,4 +1,3 @@
-
 # ambulance planner (version 1).
 
 import datetime as dt
@@ -23,6 +22,7 @@ st.set_page_config(page_title="TPS planner | Amanda Xuan", layout="wide",
 st.markdown(f"<style>{Path('style.css').read_text()}</style>", unsafe_allow_html=True)
 
 METHODS = {
+    "neural network": "nn",
     "machine learning": "gbm",
     "historical average": "hist_avg",
     "last 4 weeks": "last_4_weeks",
@@ -36,7 +36,8 @@ HELP = {
     "date": "pick any day in 2025. the model was trained on 2021–2024, so 2025 is a fair test it never saw.",
     "slot": "the day is split into 3-hour windows. forecasts and plans are made for one window at a time.",
     "count": "how many free ambulances you have to position. fewer ambulances makes the placement choice matter more.",
-    "forecast": "machine learning: gradient boosting trained on area, time and recent calls. "
+    "forecast": "neural network: a pytorch model that learns a vector for each area and time. "
+                "machine learning: gradient boosting trained on area, time and recent calls. "
                 "historical average: the usual count for this area, weekday and time. "
                 "last 4 weeks / last week: the same window in recent weeks.",
     "placement": "optimizer: solves a covering model that reaches the most predicted calls with your ambulances. "
@@ -64,6 +65,7 @@ def load():
 
 
 fc, cent, gj = load()
+METHODS = {k: v for k, v in METHODS.items() if v in fc.columns}  # only models you've trained
 dist = distance_matrix(cent)
 order = cent["fsa"].tolist()
 
