@@ -111,7 +111,7 @@ def optimize_ambulances(demand, dist, n, cover_km=COVER_KM,
 
     from scipy.optimize import Bounds, LinearConstraint, milp
 
-    demand = np.nan_to_num(np.asarray(demand, dtype=float))
+    demand = np.nan_to_num(np.asarray(demand, dtype=float)) + 0.01  # spare ambulances still cover quiet areas
 
     m = len(demand)
 
