@@ -2,7 +2,7 @@
 step 4b: the ambulance planner (version 1).
 
 run: .venv/Scripts/python -m streamlit run app.py
-needs: data/processed/forecast_baseline_2025.pkl, toronto_fsa.geojson, fsa_centroids.csv
+needs: data/processed/forecast_2025.pkl, toronto_fsa.geojson, fsa_centroids.csv
 style: style.css and .streamlit/config.toml (colours from amandaxuan.com)
 """
 
@@ -26,6 +26,7 @@ st.set_page_config(page_title="TPS planner | Amanda Xuan", layout="wide")
 st.markdown(f"<style>{Path('style.css').read_text()}</style>", unsafe_allow_html=True)
 
 METHODS = {
+    "machine learning (gradient boosting)": "gbm",
     "historical average": "hist_avg",
     "last 4 weeks": "last_4_weeks",
     "last week": "last_week",
@@ -37,7 +38,7 @@ SLOTS = ["12am–3am", "3am–6am", "6am–9am", "9am–12pm",
 @st.cache_data
 def load():
     # cached so it only loads once
-    fc = pd.read_pickle("data/processed/forecast_baseline_2025.pkl")
+    fc = pd.read_pickle("data/processed/forecast_2025.pkl")
     cent = pd.read_csv("data/processed/fsa_centroids.csv")
     cent = cent[cent["fsa"].isin(fc["fsa"].unique())].reset_index(drop=True)
     with open("data/processed/toronto_fsa.geojson") as fh:
