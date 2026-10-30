@@ -6,7 +6,7 @@ A forecasting and planning tool for Toronto Paramedic Services. Machine learning
 
 ## Why
 
-Toronto's response times to life-threatening calls have grown from about 12 to almost 15 minutes (90th percentile, 2019–2025) while call volume rises every year. Toronto's Auditor General (2024) found the service hadn't analysed optimal staffing against daily, **weekly and seasonal demand surges. If we can predict roughly where calls will come from, where should free ambulances wait?**
+Toronto's response times to life-threatening calls have grown from about 12 to almost 15 minutes (90th percentile, 2019–2025) while call volume rises every year. Toronto's Auditor General (2024) found the service hadn't analysed optimal staffing against daily, weekly and seasonal demand surges. **If we can predict roughly where calls will come from, where should free ambulances wait?**
 
 ## Results
 
