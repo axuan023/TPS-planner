@@ -22,7 +22,7 @@ BG, TEXT, STRONG, FAINT, LINE, BOX, ACCENT = (
     "#131417", "#8b91a3", "#f2f3f5", "#4a4f5c", "#25282f", "#1c1e23", "#ef7a45")
 FONT = "Roboto Mono, monospace"
 
-st.set_page_config(page_title="ambulance planner | Amanda Xuan", layout="wide")
+st.set_page_config(page_title="TPS planner | Amanda Xuan", layout="wide")
 st.markdown(f"<style>{Path('style.css').read_text()}</style>", unsafe_allow_html=True)
 
 METHODS = {
@@ -67,7 +67,7 @@ g = fc[fc["block"] == block].set_index("fsa").reindex(order).reset_index()
 # header, same layout as the site
 st.markdown(
     f'<p class="eyebrow">{block:%A, %B %d %Y}'.lower() + f' · {slot}</p>'
-    '<p class="title">toronto ambulance planner</p>'
+    '<p class="title">TPS planner</p>'
     '<p class="role">where should free ambulances wait, based on where calls are likely to come from.</p>',
     unsafe_allow_html=True,
 )
