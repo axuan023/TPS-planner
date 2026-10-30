@@ -70,3 +70,50 @@ def evaluate_year(fc, cent, method, n, cover_km=COVER_KM):
                     coverage(g["calls"], dist, best, cover_km)))
     res = np.array(res)
     return np.nanmean(res[:, 0]), np.nanmean(res[:, 1])
+
+
+def optimize_ambulances(demand, dist, n, cover_km=COVER_KM, levels=3, backup_weight=0.001):
+    """
+    proper optimization (maximal covering location problem, with backup coverage).
+
+    decide x[i] = ambulances waiting at area i, to
+      maximize   covered demand  +  a tiny bonus for 2nd/3rd ambulances in reach
+      subject to exactly n ambulances, and an area only counts as covered
+                 k times if at least k ambulances are within cover_km.
+    the tiny bonus only breaks ties, so first coverage always comes first.
+    """
+    from scipy.optimize import Bounds, LinearConstraint, milp
+
+    d = np.nan_to_num(np.asarray(demand, dtype=float))
+    m = len(d)
+    a = (dist <= cover_km).astype(float)          # a[i, j] = 1 if site i reaches area j
+
+    # weight of being covered the 1st, 2nd, 3rd time
+    w = [1.0] + [backup_weight * 0.5 ** k for k in range(levels - 1)]
+
+    # variables: x (m sites), then y (m areas x levels), y[j, k] = 1 if area j covered k+1 times
+    n_vars = m + m * levels
+    c = np.zeros(n_vars)
+    for k in range(levels):
+        c[m + k * m: m + (k + 1) * m] = -w[k] * d  # milp minimizes, so negate
+
+    # coverage: sum over k of y[j, k]  <=  ambulances within reach of j
+    cov = np.zeros((m, n_vars))
+    cov[:, :m] = -a.T
+    for k in range(levels):
+        cov[np.arange(m), m + k * m + np.arange(m)] = 1
+    # exactly n ambulances
+    total = np.zeros((1, n_vars))
+    total[0, :m] = 1
+
+    res = milp(
+        c,
+        constraints=[LinearConstraint(cov, -np.inf, 0), LinearConstraint(total, n, n)],
+        integrality=np.ones(n_vars),
+        bounds=Bounds(0, np.r_[np.full(m, n), np.ones(m * levels)]),
+        options={"time_limit": 5},
+    )
+    if res.x is None:
+        return place_ambulances(demand, dist, n, cover_km)  # fall back to the simple rule
+    x = np.round(res.x[:m]).astype(int)
+    return [i for i in range(m) for _ in range(x[i])]

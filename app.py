@@ -15,7 +15,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from planner import COVER_KM, coverage, distance_matrix, nearest_km, place_ambulances
+from planner import (COVER_KM, coverage, distance_matrix, nearest_km,
+                     optimize_ambulances, place_ambulances)
 
 # site colours
 BG, TEXT, STRONG, FAINT, LINE, BOX, ACCENT = (
@@ -59,6 +60,8 @@ slot = st.sidebar.selectbox("time window", SLOTS, index=7)
 n = st.sidebar.slider("ambulances available", 5, 60, 20)
 method_label = st.sidebar.selectbox("forecast", list(METHODS))
 method = METHODS[method_label]
+placer_label = st.sidebar.selectbox("placement", ["optimizer", "simple rule"])
+placer = optimize_ambulances if placer_label == "optimizer" else place_ambulances
 show = st.sidebar.radio("map colour", ["forecast", "what actually happened"])
 
 # pick the 3-hour block
@@ -79,8 +82,8 @@ if g["calls"].isna().all():
     st.stop()
 
 # place ambulances using the forecast, and with hindsight for comparison
-plan = place_ambulances(g[method].fillna(0), dist, n)
-best = place_ambulances(g["calls"].fillna(0), dist, n)
+plan = placer(g[method].fillna(0), dist, n)
+best = placer(g["calls"].fillna(0), dist, n)
 
 
 def stat(label, value, accent=False):
