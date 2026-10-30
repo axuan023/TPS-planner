@@ -1,0 +1,11 @@
+# colours from amandaxuan.com (dark theme)
+[theme]
+base = "dark"
+primaryColor = "#ef7a45"
+backgroundColor = "#131417"
+secondaryBackgroundColor = "#1c1e23"
+textColor = "#8b91a3"
+font = "monospace"
+
+[client]
+toolbarMode = "minimal"

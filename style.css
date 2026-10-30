@@ -1,0 +1,131 @@
+/* matches amandaxuan.com: roboto mono, dark pond colours, koi orange */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap');
+
+:root {
+    --bg: #131417;
+    --text: #8b91a3;
+    --strong: #f2f3f5;
+    --faint: #4a4f5c;
+    --line: #25282f;
+    --box: #1c1e23;
+    --accent: #ef7a45;
+    --font: 'Roboto Mono', ui-monospace, monospace;
+}
+
+html, body, [class*="css"], .stApp, .stApp * {
+    font-family: var(--font) !important;
+}
+
+.stApp {
+    background-color: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+/* hide streamlit's top bar and colour stripe */
+[data-testid="stHeader"], [data-testid="stDecoration"] {
+    display: none;
+}
+
+/* page width and spacing */
+[data-testid="stMainBlockContainer"], .block-container {
+    max-width: 1100px;
+    padding-top: 40px;
+    padding-bottom: 48px;
+}
+
+/* sidebar: same background, thin line instead of a panel */
+[data-testid="stSidebar"] {
+    background-color: var(--bg);
+    border-right: 1px solid var(--line);
+}
+
+/* small labels, like section titles on the site */
+label, [data-testid="stWidgetLabel"] p {
+    font-size: 14px !important;
+    color: var(--text) !important;
+    font-weight: 400 !important;
+}
+
+/* inputs: flat with thin borders */
+[data-baseweb="select"] > div, [data-baseweb="input"] > div, .stDateInput input {
+    background-color: var(--bg) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 10px !important;
+    color: var(--strong) !important;
+    font-size: 15px !important;
+}
+
+/* header text */
+.title {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--strong);
+}
+.eyebrow {
+    font-size: 14px;
+    color: var(--text);
+}
+.role {
+    margin-bottom: 28px;
+    color: var(--text);
+}
+
+/* numbers: title + value rows with thin dividers, like the site's lists */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 20px;
+}
+.stat {
+    padding: 12px 16px 12px 0;
+}
+.stat + .stat {
+    border-left: 1px solid var(--line);
+    padding-left: 16px;
+}
+.stat .label {
+    font-size: 14px;
+    color: var(--text);
+}
+.stat .value {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--strong);
+    font-variant-numeric: tabular-nums;
+}
+.stat .value.accent {
+    color: var(--accent);
+}
+
+/* map gets the same rounded box as images on the site */
+[data-testid="stPlotlyChart"] {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+}
+
+.note, .footer {
+    font-size: 14px;
+    color: var(--text);
+    margin-top: 12px;
+}
+.footer {
+    margin-top: 48px;
+}
+
+@media (max-width: 700px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(3) { border-left: none; padding-left: 0; }
+}
+
+/* radio and slider text */
+[data-testid="stRadio"] label p, [data-testid="stMarkdownContainer"] p,
+[data-testid="stSliderThumbValue"], [data-testid="stTickBarMin"], [data-testid="stTickBarMax"] {
+    font-size: 15px !important;
+}
+.stApp .title { font-size: 20px !important; }
+.stApp .eyebrow, .stApp .note, .stApp .footer { font-size: 14px !important; }
