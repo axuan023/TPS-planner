@@ -1,14 +1,8 @@
-"""
-step 5: machine learning forecast (gradient boosting).
+# gradient boosting
 
-run: .venv/Scripts/python notebooks/05_gradient_boosting.py
-in:  data/processed/zone_blocks.pkl, data/processed/forecast_baseline_2025.pkl
-out: data/processed/forecast_2025.pkl (baselines + the new model)
-
-same setup as step 3: train on 2021-2024, test on 2025.
-every feature only uses data from at least a week before, so the model
-could really make this forecast a week ahead.
-"""
+# run: .venv/Scripts/python notebooks/05_gradient_boosting.py
+# in:  data/processed/zone_blocks.pkl, data/processed/forecast_baseline_2025.pkl
+# out: data/processed/forecast_2025.pkl (baselines + the new model)
 
 import time
 

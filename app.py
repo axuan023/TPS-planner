@@ -1,10 +1,5 @@
-"""
-step 4b: the ambulance planner (version 1).
 
-run: .venv/Scripts/python -m streamlit run app.py
-needs: data/processed/forecast_2025.pkl, toronto_fsa.geojson, fsa_centroids.csv
-style: style.css and .streamlit/config.toml (colours from amandaxuan.com)
-"""
+# ambulance planner (version 1).
 
 import datetime as dt
 import json
@@ -23,17 +18,38 @@ BG, TEXT, STRONG, FAINT, LINE, BOX, ACCENT = (
     "#131417", "#8b91a3", "#f2f3f5", "#4a4f5c", "#25282f", "#1c1e23", "#ef7a45")
 FONT = "Roboto Mono, monospace"
 
-st.set_page_config(page_title="TPS planner | Amanda Xuan", layout="wide")
+st.set_page_config(page_title="TPS planner | Amanda Xuan", layout="wide",
+                   initial_sidebar_state="expanded")
 st.markdown(f"<style>{Path('style.css').read_text()}</style>", unsafe_allow_html=True)
 
 METHODS = {
-    "machine learning (gradient boosting)": "gbm",
+    "machine learning": "gbm",
     "historical average": "hist_avg",
     "last 4 weeks": "last_4_weeks",
     "last week": "last_week",
 }
 SLOTS = ["12am–3am", "3am–6am", "6am–9am", "9am–12pm",
          "12pm–3pm", "3pm–6pm", "6pm–9pm", "9pm–12am"]
+
+# every explanation in one place, used by the info buttons and help icons
+HELP = {
+    "date": "pick any day in 2025. the model was trained on 2021–2024, so 2025 is a fair test it never saw.",
+    "slot": "the day is split into 3-hour windows. forecasts and plans are made for one window at a time.",
+    "count": "how many free ambulances you have to position. fewer ambulances makes the placement choice matter more.",
+    "forecast": "machine learning: gradient boosting trained on area, time and recent calls. "
+                "historical average: the usual count for this area, weekday and time. "
+                "last 4 weeks / last week: the same window in recent weeks.",
+    "placement": "optimizer: solves a covering model that reaches the most predicted calls with your ambulances. "
+                 "simple rule: places one ambulance at a time where it helps most, never revisiting earlier picks.",
+    "colour": "colour the map by the forecast (what the plan was based on) or by the calls that really happened.",
+    "pred": "total calls the chosen forecast expected across toronto in this window.",
+    "actual": "total calls that really happened in this window (2025 records).",
+    "cov": "share of the real calls that happened within 4 km of one of your ambulances. higher is better.",
+    "best": "the same placement method, but given the real calls instead of a forecast. "
+            "the gap between this and your plan shows how much a perfect forecast would add.",
+    "map": "each area is a postal code region (like M5V). darker orange = more calls. white dots = ambulances; "
+           "a number means several wait in that area. hover an area to see its numbers.",
+}
 
 
 @st.cache_data
@@ -51,18 +67,28 @@ fc, cent, gj = load()
 dist = distance_matrix(cent)
 order = cent["fsa"].tolist()
 
+
+def info(key, label):
+    # an "i" button that shows its explanation on hover, tap or keyboard focus
+    return (f'<span class="info-wrap"><button class="info" type="button" '
+            f'aria-label="about {label}" aria-describedby="tip-{key}">i</button>'
+            f'<span class="tip" role="tooltip" id="tip-{key}">{HELP[key]}</span></span>')
+
+
 # sidebar controls
-st.sidebar.markdown('<p class="title">plan a shift</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<p class="side-title">plan a shift</p>'
+                    '<p class="side-sub">change anything below and the map updates.</p>',
+                    unsafe_allow_html=True)
 day = st.sidebar.date_input("date (2025)", value=dt.date(2025, 8, 1),
                             min_value=dt.date(2025, 1, 1),
-                            max_value=dt.date(2025, 12, 31))
-slot = st.sidebar.selectbox("time window", SLOTS, index=7)
-n = st.sidebar.slider("ambulances available", 5, 60, 20)
-method_label = st.sidebar.selectbox("forecast", list(METHODS))
+                            max_value=dt.date(2025, 12, 31), help=HELP["date"])
+slot = st.sidebar.selectbox("time window", SLOTS, index=7, help=HELP["slot"])
+n = st.sidebar.slider("ambulances available", 5, 60, 20, help=HELP["count"])
+method_label = st.sidebar.selectbox("forecast", list(METHODS), help=HELP["forecast"])
 method = METHODS[method_label]
-placer_label = st.sidebar.selectbox("placement", ["optimizer", "simple rule"])
+placer_label = st.sidebar.selectbox("placement", ["optimizer", "simple rule"], help=HELP["placement"])
 placer = optimize_ambulances if placer_label == "optimizer" else place_ambulances
-show = st.sidebar.radio("map colour", ["forecast", "what actually happened"])
+show = st.sidebar.radio("map colour", ["forecast", "what actually happened"], help=HELP["colour"])
 
 # pick the 3-hour block
 block = pd.Timestamp(day) + pd.Timedelta(hours=3 * SLOTS.index(slot))
@@ -71,13 +97,21 @@ g = fc[fc["block"] == block].set_index("fsa").reindex(order).reset_index()
 # header, same layout as the site
 st.markdown(
     f'<p class="eyebrow">{block:%A, %B %d %Y}'.lower() + f' · {slot}</p>'
-    '<p class="title">TPS planner</p>'
+    '<h1 class="title">TPS planner</h1>'
     '<p class="role">where should free ambulances wait, based on where calls are likely to come from.</p>',
     unsafe_allow_html=True,
 )
 
+with st.expander("how to use this", expanded=False):
+    st.markdown(
+        "1. pick a **date** and **time window** in the sidebar.\n"
+        "2. set how many **ambulances** are free.\n"
+        "3. choose a **forecast** and a **placement** method.\n"
+        "4. read the numbers below and check the map. every **i** button explains what you're looking at."
+    )
+
 if g["calls"].isna().all():
-    st.markdown('<p class="note">no records for this window (system outage or daylight saving). '
+    st.markdown('<p class="warn">no records for this window (system outage or daylight saving). '
                 'pick another.</p>', unsafe_allow_html=True)
     st.stop()
 
@@ -86,18 +120,20 @@ plan = placer(g[method].fillna(0), dist, n)
 best = placer(g["calls"].fillna(0), dist, n)
 
 
-def stat(label, value, accent=False):
+def stat(key, label, value, accent=False):
     cls = "value accent" if accent else "value"
-    return f'<div class="stat"><div class="label">{label}</div><div class="{cls}">{value}</div></div>'
+    return (f'<div class="stat"><div class="label">{label}{info(key, label)}</div>'
+            f'<div class="{cls}">{value}</div></div>')
 
 
 st.markdown(
     '<div class="stats">'
-    + stat("predicted calls", f"{g[method].sum():.0f}")
-    + stat("actual calls", f"{g['calls'].sum():.0f}")
-    + stat(f"calls within {COVER_KM:.0f} km", f"{coverage(g['calls'], dist, plan):.0%}", accent=True)
-    + stat("hindsight plan", f"{coverage(g['calls'], dist, best):.0%}")
-    + "</div>",
+    + stat("pred", "predicted calls", f"{g[method].sum():.0f}")
+    + stat("actual", "actual calls", f"{g['calls'].sum():.0f}")
+    + stat("cov", f"calls within {COVER_KM:.0f} km", f"{coverage(g['calls'], dist, plan):.0%}", accent=True)
+    + stat("best", "hindsight plan", f"{coverage(g['calls'], dist, best):.0%}")
+    + "</div>"
+    + f'<p class="map-head">map{info("map", "the map")}</p>',
     unsafe_allow_html=True,
 )
 
@@ -138,7 +174,30 @@ st.markdown(
     f'<p class="note">avg distance from a call to the nearest ambulance: '
     f'{nearest_km(g["calls"], dist, plan):.1f} km (plan) vs '
     f'{nearest_km(g["calls"], dist, best):.1f} km (hindsight). '
-    'straight-line between area centres for now.</p>'
-    '<p class="footer">© 2026 Amanda Xuan</p>',
+    'straight-line between area centres for now.</p>',
     unsafe_allow_html=True,
 )
+
+# year in review, from notebooks/07_replay.py
+summary_path = Path("data/processed/replay_summary.csv")
+if summary_path.exists():
+    yr = pd.read_csv(summary_path)
+    # show the replayed fleet size closest to the slider
+    sizes = yr["ambulances"].unique()
+    yr = yr[yr["ambulances"] == sizes[abs(sizes - n).argmin()]]
+    names = {v: k for k, v in METHODS.items()} | {"hindsight": "hindsight (perfect forecast)"}
+    yr = yr.assign(forecast=yr["forecast"].map(names).fillna(yr["forecast"]))
+    yr = yr.sort_values(["placement", "calls reached"], ascending=[True, False])
+    rows = "".join(
+        f'<tr><td>{r.placement}</td><td>{r.forecast}</td><td>{r["calls reached"]:.1%}</td>'
+        f'<td>{r["urgent reached"]:.1%}</td><td>{r["avg km to ambulance"]:.2f}</td></tr>'
+        for _, r in yr.iterrows())
+    st.markdown(
+        f'<p class="map-head" style="margin-top:40px">all of 2025, {yr["ambulances"].iloc[0]} ambulances</p>'
+        '<p class="role">every 3-hour window replayed: plan with the forecast, score on what really happened.</p>'
+        '<table class="yr"><thead><tr><th>placement</th><th>forecast</th><th>calls reached</th>'
+        f'<th>urgent reached</th><th>avg km</th></tr></thead><tbody>{rows}</tbody></table>',
+        unsafe_allow_html=True,
+    )
+
+st.markdown('<p class="footer">© 2026 Amanda Xuan</p>', unsafe_allow_html=True)

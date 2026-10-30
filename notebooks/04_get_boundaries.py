@@ -1,9 +1,7 @@
-"""
-step 4a: download toronto's postal area (fsa) shapes from statistics canada.
+# download toronto's postal area (fsa) shapes from statistics canada.
 
-run: python notebooks/04_get_boundaries.py
-out: data/processed/toronto_fsa.geojson, data/processed/fsa_centroids.csv
-"""
+# run: python notebooks/04_get_boundaries.py
+# out: data/processed/toronto_fsa.geojson, data/processed/fsa_centroids.csv
 
 import json
 import math

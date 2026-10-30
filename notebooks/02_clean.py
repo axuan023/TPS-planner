@@ -1,10 +1,4 @@
-"""
-step 2: clean the data and build the zone-time table.
-
-run: python notebooks/02_clean.py
-in:  data/processed/incidents_raw.pkl
-out: data/processed/incidents_clean.pkl, data/processed/zone_blocks.pkl
-"""
+# cleaning data
 
 from pathlib import Path
 
