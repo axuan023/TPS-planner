@@ -21,6 +21,7 @@ placers = {
 
 # load data
 fc = pd.read_pickle("data/processed/forecast_2025.pkl")
+forecasts = [f for f in forecasts if f in fc.columns]  # skip models not trained yet
 cent = pd.read_csv("data/processed/fsa_centroids.csv")
 
 cent = cent[cent["fsa"].isin(fc["fsa"].unique())]
