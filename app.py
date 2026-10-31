@@ -1,6 +1,6 @@
-
 import datetime as dt
 import json
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -15,12 +15,13 @@ from planner import (
 
 # colours
 BG = "#131417"
-TEXT = "#8b91a3"
-WHITE = "#f2f3f5"
-LINE = "#25282f"
-BOX = "#1c1e23"
+CARD = "#191a1e"
+LINE = "rgba(237, 238, 241, 0.08)"
+TEXT = "#eceef1"
+TEXT_2 = "#a4aaba"
+TEXT_3 = "#80869a"
 ORANGE = "#ef7a45"
-FONT = "Roboto Mono, monospace"
+MONO = "Roboto Mono, monospace"
 
 st.set_page_config(
     page_title="TPS planner | Amanda Xuan",
@@ -56,9 +57,9 @@ help_text = {
     "colour": "Show forecasted calls or actual calls on the map.",
     "pred": "Total number of predicted calls in this time window.",
     "actual": "Number of calls that actually happened.",
-    "cov": "Percentage of actual calls within 4 km of an ambulance.",
-    "best": "Placement using actual calls instead of predicted calls.",
-    "map": "Orange shows call volume. White dots show ambulance locations."
+    "cov": "Percentage of actual calls within 4 km of an ambulance. The white tick is the hindsight plan: the same method given the real calls.",
+    "map": "Orange shows call volume. White dots are ambulances, and each ring is the 4 km an ambulance can reach.",
+    "year": "Every 3-hour window of 2025 replayed: plan with the forecast, then score on what really happened."
 }
 
 
@@ -89,7 +90,7 @@ dist = distance_matrix(cent)
 areas = cent["fsa"].tolist()
 
 
-# info button
+# info button: explanation shows on hover, tap or keyboard focus
 def info(key, label):
     return (
         f'<span class="info-wrap">'
@@ -100,10 +101,20 @@ def info(key, label):
     )
 
 
+# 4 km reach ring around a point, as map coordinates
+def ring(lat, lon, km=COVER_KM, points=48):
+    lats, lons = [], []
+    for i in range(points + 1):
+        angle = 2 * math.pi * i / points
+        lats.append(lat + km / 110.57 * math.sin(angle))
+        lons.append(lon + km / (111.32 * math.cos(math.radians(43.7))) * math.cos(angle))
+    return lats, lons
+
+
 # sidebar
 st.sidebar.markdown(
     '<p class="side-title">plan a shift</p>'
-    '<p class="side-sub">change anything below and the map updates.</p>',
+    '<p class="side-sub">change anything and the map updates</p>',
     unsafe_allow_html=True
 )
 
@@ -120,7 +131,7 @@ slot = st.sidebar.selectbox(
 )
 
 n = st.sidebar.slider(
-    "ambulances available", 5, 60, 20, help=help_text["count"]
+    "ambulances available", 5, 60, 10, help=help_text["count"]
 )
 
 forecast_name = st.sidebar.selectbox(
@@ -153,12 +164,13 @@ block = pd.Timestamp(day) + pd.Timedelta(hours=3 * slots.index(slot))
 data = fc[fc["block"] == block]
 data = data.set_index("fsa").reindex(areas).reset_index()
 
-# page title
+# page title: the window you're planning is the headline
+day_name = f"{block:%A, %B} {block.day}".lower()
+
 st.markdown(
-    f'<p class="eyebrow">{block:%A, %B %d %Y}'.lower()
-    + f' · {slot}</p>'
-    '<h1 class="title">TPS planner</h1>'
-    '<p class="role">where should free ambulances wait, based on where calls are likely to come from.</p>',
+    '<p class="eyebrow">TPS planner · toronto paramedic services</p>'
+    f'<h1 class="title">{day_name} <span class="title-dim">{slot}</span></h1>'
+    '<p class="role">where free ambulances should wait, based on where calls are likely to come from</p>',
     unsafe_allow_html=True
 )
 
@@ -172,7 +184,11 @@ with st.expander("how to use this"):
 
 # check missing data
 if data["calls"].isna().all():
-    st.warning("No records for this time window. Please choose another.")
+    st.markdown(
+        '<p class="warn">no records for this window, the system was down or the clocks changed. '
+        'pick another window</p>',
+        unsafe_allow_html=True
+    )
     st.stop()
 
 # ambulance locations
@@ -182,41 +198,55 @@ actual = data["calls"].fillna(0)
 plan = placer(predicted, dist, n)
 best = placer(actual, dist, n)
 
+plan_cov = coverage(actual, dist, plan)
+best_cov = coverage(actual, dist, best)
+off_by = predicted.sum() - actual.sum()
 
-# stats
-def stat(key, label, value, highlight=False):
-    style = "value accent" if highlight else "value"
-
-    return (
-        f'<div class="stat">'
-        f'<div class="label">{label}{info(key, label)}</div>'
-        f'<div class="{style}">{value}</div>'
-        f'</div>'
-    )
+# gap from the rounded numbers people see, so 77% and 85% always read as 8
+gap = round(best_cov * 100) - round(plan_cov * 100)
+if gap > 0:
+    gap_text = f"hindsight plan {best_cov:.0%}, {gap} points a perfect forecast would add"
+else:
+    gap_text = f"hindsight plan {best_cov:.0%}, your plan already matches it"
 
 
+# numbers: two compact figures, then the one that matters, wider
 st.markdown(
     '<div class="stats">'
-    + stat("pred", "predicted calls", f"{predicted.sum():.0f}")
-    + stat("actual", "actual calls", f"{actual.sum():.0f}")
-    + stat(
-        "cov",
-        f"calls within {COVER_KM:.0f} km",
-        f"{coverage(actual, dist, plan):.0%}",
-        True
-    )
-    + stat(
-        "best",
-        "hindsight plan",
-        f"{coverage(actual, dist, best):.0%}"
-    )
-    + '</div>'
-    + f'<p class="map-head">map{info("map", "the map")}</p>',
+
+    '<div class="stat">'
+    f'<div class="label">predicted calls{info("pred", "predicted calls")}</div>'
+    f'<div class="value">{predicted.sum():.0f}</div>'
+    f'<div class="meta">{off_by:+.0f} vs actual</div>'
+    '</div>'
+
+    '<div class="stat">'
+    f'<div class="label">actual calls{info("actual", "actual calls")}</div>'
+    f'<div class="value">{actual.sum():.0f}</div>'
+    '<div class="meta">2025 records</div>'
+    '</div>'
+
+    '<div class="stat key">'
+    f'<div class="label"><span class="reach" aria-hidden="true"></span>'
+    f'calls within {COVER_KM:.0f} km of an ambulance{info("cov", "calls within 4 km")}</div>'
+    '<div class="key-row">'
+    f'<div class="value accent">{plan_cov:.0%}</div>'
+    '<div class="meter" role="img" '
+    f'aria-label="your plan {plan_cov:.0%}, hindsight plan {best_cov:.0%}">'
+    f'<span class="fill" style="width:{plan_cov * 100:.1f}%"></span>'
+    f'<span class="tick" style="left:{best_cov * 100:.1f}%"></span>'
+    '</div>'
+    '</div>'
+    f'<div class="meta">{gap_text}</div>'
+    '</div>'
+
+    '</div>'
+    f'<p class="section-head">map{info("map", "the map")}</p>',
     unsafe_allow_html=True
 )
 
 
-# map
+# map: graphite tiles, orange heat, white ambulances with their 4 km reach
 colour = forecast if show == "forecast" else "calls"
 
 fig = px.choropleth_map(
@@ -224,27 +254,45 @@ fig = px.choropleth_map(
     geojson=shapes,
     locations="fsa",
     color=colour,
-    color_continuous_scale=[BOX, "#7a4a35", ORANGE, "#ffc9a8"],
+    color_continuous_scale=["#22242a", "#6b3f2c", ORANGE, "#ffd2b8"],
     range_color=(0, max(1, data[colour].max())),
     map_style="carto-darkmatter",
     zoom=9.6,
     center={"lat": 43.71, "lon": -79.38},
-    opacity=0.8,
+    opacity=0.82,
     hover_name="fsa",
     hover_data={"fsa": False, forecast: ":.2f", "calls": ":.0f"},
     labels={forecast: "forecast", "calls": "actual"}
 )
 
 fig.update_traces(
-    marker_line_color=LINE,
+    marker_line_color="rgba(237, 238, 241, 0.10)",
     marker_line_width=0.6,
     selector=dict(type="choroplethmap")
 )
 
-# ambulance markers
+# ambulance markers, sized by how many share a spot
 counts = pd.Series(plan).value_counts()
 ambulance_points = cent.iloc[counts.index].copy()
 ambulance_points["n"] = counts.values
+
+# reach rings, drawn as one trace
+ring_lats, ring_lons = [], []
+for lat, lon in zip(ambulance_points["lat"], ambulance_points["lon"]):
+    lats, lons = ring(lat, lon)
+    ring_lats += lats + [None]
+    ring_lons += lons + [None]
+
+fig.add_trace(
+    go.Scattermap(
+        lat=ring_lats,
+        lon=ring_lons,
+        mode="lines",
+        line=dict(color="rgba(237, 238, 241, 0.45)", width=1),
+        hoverinfo="skip",
+        name="4 km reach"
+    )
+)
 
 fig.add_trace(
     go.Scattermap(
@@ -253,14 +301,14 @@ fig.add_trace(
         mode="markers+text",
         marker=dict(
             size=12 + 4 * ambulance_points["n"],
-            color=WHITE
+            color=TEXT
         ),
         text=ambulance_points["n"].where(
             ambulance_points["n"] > 1, ""
         ).astype(str),
-        textfont=dict(color=BG, family=FONT, size=13),
+        textfont=dict(color=BG, family=MONO, size=12),
         hovertext=[
-            f"{fsa}: {count} ambulance(s)"
+            f"{fsa}: {count} ambulance{'s' if count > 1 else ''}"
             for fsa, count in zip(
                 ambulance_points["fsa"],
                 ambulance_points["n"]
@@ -272,21 +320,28 @@ fig.add_trace(
 )
 
 fig.update_layout(
-    height=620,
+    height=560,
     margin=dict(l=0, r=0, t=0, b=0),
     showlegend=False,
     paper_bgcolor=BG,
-    font=dict(family=FONT, color=TEXT, size=15),
+    font=dict(family=MONO, color=TEXT_2, size=13),
     hoverlabel=dict(
-        bgcolor=BOX,
-        bordercolor=LINE,
-        font=dict(family=FONT, color=WHITE, size=15)
+        bgcolor=CARD,
+        bordercolor="rgba(237, 238, 241, 0.16)",
+        font=dict(family=MONO, color=TEXT, size=14)
     ),
+    # slim legend inside the map, no empty band beside it
     coloraxis_colorbar=dict(
-        title="calls",
-        thickness=14,
-        len=0.5,
-        outlinewidth=0
+        title=dict(text="calls", font=dict(color=TEXT_2, size=12)),
+        tickfont=dict(color=TEXT_2, size=12),
+        thickness=8,
+        len=0.4,
+        x=0.985,
+        xanchor="right",
+        y=0.96,
+        yanchor="top",
+        outlinewidth=0,
+        bgcolor="rgba(19, 20, 23, 0.72)"
     )
 )
 
@@ -301,9 +356,10 @@ plan_km = nearest_km(actual, dist, plan)
 best_km = nearest_km(actual, dist, best)
 
 st.markdown(
-    f'<p class="note">avg distance from a call to the nearest ambulance: '
-    f'{plan_km:.1f} km (plan) vs {best_km:.1f} km (hindsight). '
-    'straight-line between area centres for now.</p>',
+    f'<p class="note">nearest ambulance on average: '
+    f'<span class="num">{plan_km:.1f} km</span> plan · '
+    f'<span class="num">{best_km:.1f} km</span> hindsight · '
+    'straight-line between area centres</p>',
     unsafe_allow_html=True
 )
 
@@ -320,48 +376,37 @@ if summary_path.exists():
     summary = summary[summary["ambulances"] == closest].copy()
 
     names = {value: key for key, value in methods.items()}
-    names["hindsight"] = "hindsight (perfect forecast)"
+    names["hindsight"] = "perfect forecast"
 
-    summary["forecast"] = summary["forecast"].map(names).fillna(
-        summary["forecast"]
-    )
+    summary["name"] = summary["forecast"].map(names).fillna(summary["forecast"])
+    summary = summary.sort_values("calls reached", ascending=False)
 
-    summary = summary.sort_values(
-        ["placement", "calls reached"],
-        ascending=[True, False]
-    )
+    real = summary[summary["forecast"] != "hindsight"]
+    top = real.index[0] if len(real) else None
 
     rows = ""
 
-    for _, row in summary.iterrows():
+    for i, row in summary.iterrows():
+        kind = "ref" if row["forecast"] == "hindsight" else ("top" if i == top else "")
         rows += (
-            f'<tr>'
-            f'<td>{row["placement"]}</td>'
-            f'<td>{row["forecast"]}</td>'
-            f'<td>{row["calls reached"]:.1%}</td>'
-            f'<td>{row["urgent reached"]:.1%}</td>'
-            f'<td>{row["avg km to ambulance"]:.2f}</td>'
-            f'</tr>'
+            f'<li class="yr-row {kind}">'
+            f'<span class="yr-name">{row["placement"]} · {row["name"]}</span>'
+            f'<span class="yr-bar"><span style="width:{row["calls reached"] * 100:.1f}%"></span></span>'
+            f'<span class="yr-num">{row["calls reached"]:.1%}</span>'
+            f'<span class="yr-meta">urgent {row["urgent reached"]:.1%} · {row["avg km to ambulance"]:.2f} km</span>'
+            f'</li>'
         )
 
     st.markdown(
-        f'<p class="map-head" style="margin-top:40px">'
-        f'all of 2025, {closest} ambulances</p>'
-        '<p class="role">every 3-hour window replayed: plan with the forecast, score on what really happened.</p>'
-        '<table class="yr">'
-        '<thead><tr>'
-        '<th>placement</th>'
-        '<th>forecast</th>'
-        '<th>calls reached</th>'
-        '<th>urgent reached</th>'
-        '<th>avg km</th>'
-        '</tr></thead>'
-        f'<tbody>{rows}</tbody></table>',
+        f'<p class="section-head yr-head">all of 2025 with {closest} ambulances'
+        f'{info("year", "all of 2025")}</p>'
+        '<p class="role">share of real calls reached within 4 km, every 3-hour window replayed</p>'
+        f'<ul class="yr">{rows}</ul>',
         unsafe_allow_html=True
     )
 
 # footer
 st.markdown(
-    '<p class="footer">© 2026 Amanda Xuan</p>',
+    '<p class="footer">© 2026 Amanda Xuan · data from city of toronto open data and statistics canada</p>',
     unsafe_allow_html=True
 )

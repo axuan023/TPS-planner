@@ -1,25 +1,30 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap');
 
 :root {
+    /* one graphite ramp, three text roles, one accent */
     --bg: #131417;
-    --panel: #181a1f;
-    --text: #a4aaba;
-    --strong: #f2f3f5;
-    --line: #2a2e36;
-    --box: #1f2228;
+    --side: #0f1012;
+    --card: #191a1e;
+    --raised: #212328;
+    --line: rgba(237, 238, 241, 0.08);
+    --line-strong: rgba(237, 238, 241, 0.16);
+    --text: #eceef1;
+    --text-2: #a4aaba;
+    --text-3: #80869a;
     --accent: #ef7a45;
-    --accent-soft: rgba(239, 122, 69, .14);
-    --focus: #ffb38a;
-    --font: 'Roboto Mono', ui-monospace, monospace;
+    --accent-soft: rgba(239, 122, 69, 0.16);
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'Roboto Mono', ui-monospace, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* font: text elements only, so streamlit's icon font (the sidebar arrows) still works */
 .stApp, .stApp p, .stApp label, .stApp input, .stApp button, .stApp li,
-.stApp h1, .stApp h2, .stApp h3, .stApp td, .stApp th, .stApp summary,
+.stApp h1, .stApp h2, .stApp h3, .stApp summary,
 .stApp [data-baseweb="select"] div, [data-baseweb="popover"] li {
-    font-family: var(--font) !important;
+    font-family: var(--sans) !important;
 }
+
 .stApp [data-testid="stIconMaterial"],
 .stApp [class*="material-symbols"],
 .stApp [class*="material-icons"] {
@@ -28,9 +33,9 @@
 
 .stApp {
     background: var(--bg);
-    color: var(--text);
-    font-size: 16px;
-    line-height: 1.7;
+    color: var(--text-2);
+    font-size: 15px;
+    line-height: 1.6;
 }
 
 [data-testid="stHeader"] {
@@ -41,175 +46,170 @@
 }
 
 [data-testid="stMainBlockContainer"], .block-container {
-    max-width: 1100px;
-    padding-top: 48px;
-    padding-bottom: 56px;
+    max-width: 1440px;
+    padding: 40px 32px 64px;
 }
 
-/* keyboard focus is always visible */
 .stApp :focus-visible {
-    outline: 3px solid var(--focus) !important;
+    outline: 2px solid var(--accent) !important;
     outline-offset: 2px;
-    border-radius: 8px;
 }
 
-/* sidebar: a panel, a bit wider, with roomy controls */
+/* sidebar*/
 [data-testid="stSidebar"] {
-    background: var(--panel);
+    background: var(--side);
     border-right: 1px solid var(--line);
-    min-width: 360px !important;
-    max-width: 360px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
 }
 [data-testid="stSidebarContent"] {
     padding: 8px 8px 32px;
 }
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    gap: 20px;
+}
 .side-title {
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--strong);
     margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
 }
 .side-sub {
-    font-size: 15px;
-    color: var(--text);
     margin: 4px 0 8px;
-}
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 22px;
+    font-size: 14px;
+    color: var(--text-3);
 }
 
-/* labels */
+/* labels and controls */
 [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] label {
-    font-size: 16px !important;
-    color: var(--strong) !important;
+    font-size: 15px !important;
     font-weight: 500 !important;
+    color: var(--text) !important;
 }
-
-/* inputs: big text, 48px tall, clear borders */
 [data-baseweb="select"] > div,
 [data-baseweb="input"] > div,
 [data-testid="stDateInput"] input {
-    min-height: 48px;
-    background: var(--box) !important;
+    min-height: 44px;
+    background: var(--raised) !important;
     border: 1px solid var(--line) !important;
-    border-radius: 10px !important;
-    color: var(--strong) !important;
-    font-size: 17px !important;
+    border-radius: 8px !important;
+    color: var(--text) !important;
+    font-size: 16px !important;
+    transition: border-color 160ms var(--ease);
 }
 [data-baseweb="select"] > div:hover,
 [data-baseweb="input"] > div:hover {
-    border-color: var(--accent) !important;
+    border-color: var(--line-strong) !important;
 }
 [data-baseweb="select"] div {
-    font-size: 17px !important;
-    color: var(--strong);
+    font-size: 16px !important;
+    color: var(--text);
 }
-/* dropdown list */
 [data-baseweb="popover"] li, [role="option"] {
-    font-size: 17px !important;
-    min-height: 44px;
+    font-size: 16px !important;
+    min-height: 40px;
 }
 
-/* slider */
-[data-testid="stSlider"] [role="slider"] {
-    width: 22px !important;
-    height: 22px !important;
-}
 [data-testid="stSliderThumbValue"] {
-    font-size: 17px !important;
-    font-weight: 500;
-    color: var(--accent) !important;
-}
-[data-testid="stSliderTickBarMin"], [data-testid="stSliderTickBarMax"] {
+    font-family: var(--mono) !important;
     font-size: 15px !important;
     color: var(--text) !important;
 }
+[data-testid="stSliderTickBarMin"], [data-testid="stSliderTickBarMax"] {
+    font-family: var(--mono) !important;
+    font-size: 13px !important;
+    color: var(--text-3) !important;
+}
 
-/* radio buttons */
 [data-testid="stRadio"] label p {
-    font-size: 17px !important;
-    color: var(--strong) !important;
+    font-size: 16px !important;
+    color: var(--text) !important;
 }
 [data-testid="stRadio"] label {
-    min-height: 40px;
+    min-height: 36px;
     align-items: center;
 }
 
-/* streamlit's own help icons ("?" next to each control): bigger and in the accent colour */
+/* help icons: text colour, not accent. they're helpers, not highlights */
 [data-testid="stTooltipIcon"] svg,
 [data-testid="stTooltipHoverTarget"] svg {
-    width: 20px !important;
-    height: 20px !important;
-    color: var(--accent) !important;
-    stroke: var(--accent) !important;
+    width: 16px !important;
+    height: 16px !important;
+    color: var(--text-3) !important;
+    stroke: var(--text-3) !important;
+    transition: color 160ms var(--ease), stroke 160ms var(--ease);
 }
 [data-testid="stTooltipIcon"]:hover svg,
 [data-testid="stTooltipHoverTarget"]:hover svg {
-    color: var(--strong) !important;
-    stroke: var(--strong) !important;
+    color: var(--text) !important;
+    stroke: var(--text) !important;
 }
-/* the help text box itself */
 [data-testid="stTooltipContent"],
 [data-baseweb="tooltip"] > div {
-    max-width: 320px !important;
-    font-family: var(--font) !important;
-    font-size: 15px !important;
-    line-height: 1.6 !important;
-    color: var(--strong) !important;
-    background: var(--box) !important;
-    border: 1px solid var(--accent) !important;
-    border-radius: 10px !important;
-    padding: 12px 14px !important;
+    max-width: 300px !important;
+    font-family: var(--sans) !important;
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+    color: var(--text) !important;
+    background: var(--raised) !important;
+    border: 1px solid var(--line-strong) !important;
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
 }
 
-/* header */
+/* header: the window you're planning is the headline */
 .eyebrow {
-    font-size: 15px;
-    color: var(--text);
     margin: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-3);
 }
 .stApp h1.title {
-    font-size: 26px;
+    margin: 8px 0 0;
+    padding: 0;
+    font-size: 32px;
     font-weight: 500;
-    color: var(--strong);
-    padding: 4px 0 0;
-    margin: 0;
+    line-height: 1.2;
+    color: var(--text);
+}
+.title-dim {
+    color: var(--text-3);
 }
 .role {
-    font-size: 16px;
-    color: var(--text);
-    margin: 6px 0 20px;
+    margin: 8px 0 24px;
+    font-size: 15px;
+    color: var(--text-2);
 }
 
-/* "how to use this" box */
 [data-testid="stExpander"] details {
-    background: var(--panel);
+    background: transparent;
     border: 1px solid var(--line);
     border-radius: 12px;
 }
 [data-testid="stExpander"] summary {
-    font-size: 17px;
-    color: var(--strong);
-    min-height: 48px;
+    min-height: 44px;
+    font-size: 15px;
+    color: var(--text-2);
+    transition: color 160ms var(--ease);
 }
 [data-testid="stExpander"] summary:hover {
-    color: var(--accent);
+    color: var(--text);
 }
 [data-testid="stExpander"] li, [data-testid="stExpander"] p {
-    font-size: 16px;
+    font-size: 15px;
 }
 
-/* the four numbers: cards with an info button each */
+/* numbers: two compact figures, then the one that matters, twice as wide */
 .stats {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
     gap: 12px;
-    margin: 20px 0 28px;
+    margin: 24px 0 32px;
 }
 .stat {
     position: relative;
-    padding: 16px 18px;
-    background: var(--panel);
+    padding: 20px;
+    background: var(--card);
     border: 1px solid var(--line);
     border-radius: 12px;
 }
@@ -217,145 +217,246 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 15px;
-    color: var(--text);
+    font-size: 14px;
+    color: var(--text-2);
 }
 .stat .value {
+    margin-top: 8px;
+    font-family: var(--mono);
     font-size: 32px;
     font-weight: 500;
-    color: var(--strong);
+    line-height: 1;
+    color: var(--text);
     font-variant-numeric: tabular-nums;
-    line-height: 1.3;
-    margin-top: 4px;
 }
 .stat .value.accent {
     color: var(--accent);
 }
+.stat .meta {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+}
 
-/* info buttons: round "i", accent ring, explanation on hover, tap or keyboard focus */
+/* the key figure: your plan as a bar, hindsight as a white tick */
+.key-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.key-row .value {
+    flex: none;
+}
+.meter {
+    position: relative;
+    flex: 1;
+    height: 8px;
+    margin-top: 8px;
+    background: var(--raised);
+    border-radius: 4px;
+}
+.meter .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--accent);
+    border-radius: 4px;
+}
+.meter .tick {
+    position: absolute;
+    top: -4px;
+    width: 2px;
+    height: 16px;
+    margin-left: -1px;
+    background: var(--text);
+    border-radius: 1px;
+}
+
+/* signature: the 4 km reach ring, same as the rings on the map */
+.reach {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid var(--text-2);
+    border-radius: 50%;
+}
+
+/* info buttons: quiet ring in text colour, explanation on hover, tap or focus */
 .info-wrap {
     position: relative;
     display: inline-flex;
 }
 .info {
-    width: 26px;
-    height: 26px;
     flex: none;
     display: inline-grid;
     place-items: center;
+    width: 20px;
+    height: 20px;
     padding: 0;
-    font-family: var(--font);
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--accent);
-    background: var(--accent-soft);
-    border: 1.5px solid var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-3);
+    background: transparent;
+    border: 1px solid var(--line-strong);
     border-radius: 50%;
     cursor: help;
-    transition: background .15s, color .15s;
+    transition: color 160ms var(--ease), border-color 160ms var(--ease);
 }
 .info:hover, .info:focus-visible, .info-wrap:focus-within .info {
-    background: var(--accent);
-    color: var(--bg);
+    color: var(--text);
+    border-color: var(--text-2);
 }
 .tip {
-    visibility: hidden;
-    opacity: 0;
     position: absolute;
     z-index: 1000;
-    top: calc(100% + 10px);
+    top: calc(100% + 8px);
     left: -12px;
     width: 280px;
-    padding: 12px 14px;
-    font-size: 15px;
-    line-height: 1.6;
-    color: var(--strong);
-    background: var(--box);
-    border: 1px solid var(--accent);
-    border-radius: 10px;
-    transition: opacity .15s;
+    padding: 12px 16px;
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text);
+    background: var(--raised);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 180ms var(--ease), transform 180ms var(--ease), visibility 180ms;
 }
 .info-wrap:hover .tip,
 .info-wrap:focus-within .tip {
-    visibility: visible;
     opacity: 1;
+    visibility: visible;
+    transform: none;
 }
-/* keep the last card's box on screen */
-.stat:last-child .tip {
+.stat.key .tip {
     left: auto;
     right: -12px;
 }
 
-.map-head {
+.section-head {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 18px;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 16px;
     font-weight: 500;
-    color: var(--strong);
-    margin: 0 0 10px;
+    color: var(--text);
 }
 
-/* map box */
 [data-testid="stPlotlyChart"] {
-    border-radius: 12px;
     overflow: hidden;
     border: 1px solid var(--line);
+    border-radius: 12px;
 }
 
 .note {
-    font-size: 15px;
-    color: var(--text);
-    margin-top: 12px;
+    margin: 12px 0 0;
+    font-size: 14px;
+    color: var(--text-3);
+}
+.note .num {
+    font-family: var(--mono);
+    color: var(--text-2);
 }
 .warn {
-    font-size: 16px;
-    color: var(--strong);
-    border-left: 3px solid var(--accent);
     padding-left: 12px;
-}
-.footer {
-    font-size: 14px;
+    border-left: 2px solid var(--accent);
+    font-size: 15px;
     color: var(--text);
+}
+
+/* all of 2025: a ranked list with thin bars, smaller and different from the map */
+.yr-head {
     margin-top: 48px;
 }
-
-/* year in review table */
 .yr {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 16px;
-    font-variant-numeric: tabular-nums;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
 }
-.yr th, .yr td {
-    padding: 10px 12px;
+.stApp .yr-row {
+    display: grid;
+    grid-template-columns: minmax(200px, 1.2fr) minmax(120px, 2fr) 72px minmax(170px, 1fr);
+    align-items: center;
+    gap: 16px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 4px;
     border-bottom: 1px solid var(--line);
-    text-align: right;
 }
-.yr th:nth-child(-n+2), .yr td:nth-child(-n+2) {
-    text-align: left;
-}
-.yr th {
-    font-weight: 400;
+.yr-name {
+    font-size: 15px;
     color: var(--text);
 }
-.yr td {
-    color: var(--strong);
+.yr-bar {
+    height: 4px;
+    background: var(--raised);
+    border-radius: 2px;
+}
+.yr-bar span {
+    display: block;
+    height: 100%;
+    background: var(--text-3);
+    border-radius: 2px;
+}
+.yr-num {
+    font-family: var(--mono);
+    font-size: 15px;
+    text-align: right;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+.yr-meta {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+}
+.yr-row.top .yr-bar span {
+    background: var(--accent);
+}
+.yr-row.top .yr-num {
+    color: var(--accent);
+}
+.yr-row.ref .yr-name,
+.yr-row.ref .yr-num {
+    color: var(--text-3);
+}
+.yr-row.ref .yr-bar span {
+    background: transparent;
+    border: 1px dashed var(--text-3);
 }
 
-/* small screens: two cards per row */
-@media (max-width: 800px) {
+.footer {
+    margin-top: 48px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-3);
+}
+
+/* smaller screens: numbers stack, list drops the meta column */
+@media (max-width: 900px) {
     .stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
-    .stat:nth-child(2) .tip {
-        left: auto;
-        right: -12px;
+    .stat.key {
+        grid-column: 1 / -1;
+    }
+    .stApp .yr-row {
+        grid-template-columns: minmax(0, 1fr) 72px;
+    }
+    .yr-bar, .yr-meta {
+        display: none;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .info, .tip {
+    .info, .tip, [data-baseweb="select"] > div {
         transition: none;
     }
 }
