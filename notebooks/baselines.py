@@ -1,10 +1,4 @@
 
-# simple forecasts (baselines) and how to score them.
-# run: python notebooks/03_baselines.py
-# in:  data/processed/zone_blocks.pkl
-# out: data/processed/forecast_baseline_2025.pkl
-# each method gets to learn and train on 2021-2024, and test on 2025. never let the model see the test year.
-
 import numpy as np
 import pandas as pd
 
